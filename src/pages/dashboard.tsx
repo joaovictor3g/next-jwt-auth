@@ -1,6 +1,12 @@
-import { Fragment } from 'react'
+import { Fragment, useContext, useEffect } from 'react'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
 import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline'
+import { parseCookies } from 'nookies';
+import { AuthContext } from '../contexts/AuthContext'
+import { api } from '../services/api'
+import { GetServerSideProps } from 'next'
+import { redirect } from 'next/dist/next-server/server/api-utils';
+import { getApiClient } from '../services/axios';
 
 const navigation = ['Dashboard', 'Team', 'Projects', 'Calendar', 'Reports']
 const profile = ['Your Profile', 'Settings', 'Sign out']
@@ -9,7 +15,13 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function Example() {
+export default function Dashboard() {
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    // api.get('/users');
+  }, []);
+
   return (
     <div>
       <Disclosure as="nav" className="bg-gray-800">
@@ -64,8 +76,8 @@ export default function Example() {
                               <span className="sr-only">Open user menu</span>
                               <img
                                 className="h-8 w-8 rounded-full"
-                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                alt=""
+                                src={user?.avatar_url}
+                                alt={user?.name}
                               />
                             </Menu.Button>
                           </div>
@@ -145,8 +157,8 @@ export default function Example() {
                   <div className="flex-shrink-0">
                     <img
                       className="h-10 w-10 rounded-full"
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                      alt=""
+                      src={user?.avatar_url}
+                      alt={user?.name}
                     />
                   </div>
                   <div className="ml-3">
@@ -191,4 +203,26 @@ export default function Example() {
       </main>
     </div>
   )
+}
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const apiClient = getApiClient(ctx);
+  const { ['nextauth:token']: token } = parseCookies(ctx)
+
+  if(!token) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    }
+  }
+
+  await apiClient.get('/users')
+
+  return {
+    props: {
+
+    }
+  }
 }
